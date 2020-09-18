@@ -1,52 +1,43 @@
-// CPPBlocks.cpp : Defines the entry point for the application.
-//
-
 #include "framework.h"
 #include "CPPBlocks.h"
 
 #define MAX_LOADSTRING 100
-HWND g_hWnd = (HWND)(INVALID_HANDLE_VALUE);
 
-// Global Variables:
+HWND g_hWnd = (HWND)(INVALID_HANDLE_VALUE);
 HINSTANCE hInst;                                // current instance
 CHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 CHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-
-// Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+game::mouse mouse;
 
 void OnTimer(HWND hWnd, UINT uint, UINT_PTR ptr, DWORD word);
 
 int APIENTRY WinMain(_In_ HINSTANCE hInstance,
 					 _In_opt_ HINSTANCE hPrevInstance,
 					 _In_ LPSTR    lpCmdLine,
-					 _In_ int       nCmdShow)
-{
+					 _In_ int       nCmdShow) {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	// Initialize global strings
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadString(hInstance, IDC_CPPBLOCKS, szWindowClass, MAX_LOADSTRING);
 
 	MyRegisterClass(hInstance);
 
-	// Perform application initialization:
 	if (!InitInstance (hInstance, nCmdShow)) {
 		return FALSE;
 	}
 
-	game::MyPaintStuff * mps = new game::MyPaintStuff(g_hWnd);
-	SetTimer(g_hWnd, (UINT_PTR)(mps), 33, (TIMERPROC)OnTimer); //aim for 30 FPS
+	game::Simulation * mps = new game::Simulation(g_hWnd);
+	SetTimer(g_hWnd, (UINT_PTR)(mps), 16, (TIMERPROC)OnTimer); //aim for 60 FPS
 
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CPPBLOCKS));
-
 	MSG msg;
 
-	// Main message loop:
 	while (GetMessage(&msg, nullptr, 0, 0)) {
 		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg)) {
 			TranslateMessage(&msg);
@@ -96,7 +87,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message) {
-	case WM_COMMAND: {
+		case WM_COMMAND: {
 			int wmId = LOWORD(wParam);
 			switch (wmId) {
 			case IDM_ABOUT:
@@ -113,20 +104,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 		}
 		break;
-	case WM_PAINT:
-		{
+		case WM_LBUTTONUP:
+			mouse.clicked = true;
+			break;
+		case WM_MOUSEMOVE:
+			mouse.x = LOWORD(lParam);
+			mouse.y = HIWORD(lParam);
+			break;
+		case WM_GETMINMAXINFO: {
+			LPMINMAXINFO lpmmi = reinterpret_cast<LPMINMAXINFO>(lParam);
+			lpmmi->ptMinTrackSize.x = 320;
+			lpmmi->ptMinTrackSize.y = 240;
+		} return 0;
+		case WM_PAINT: {
 			PAINTSTRUCT ps;
 			HDC hdc = BeginPaint(hWnd, &ps);
 			EndPaint(hWnd, &ps);
-		}
-		break;
-	case WM_ERASEBKGND:
-		return 1;
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		} break;
+		case WM_ERASEBKGND:
+			return 1;
+		case WM_DESTROY:
+			PostQuitMessage(0);
+			break;
+		default:
+			return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;
 }
@@ -148,11 +149,11 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 }
 
 void OnTimer(HWND hWnd, UINT uint, UINT_PTR ptr, DWORD word) {
-	game::MyPaintStuff * mps = reinterpret_cast<game::MyPaintStuff*>(ptr);
+	game::Simulation * mps = reinterpret_cast<game::Simulation*>(ptr);
 	RECT rect;
 	GetClientRect(hWnd, &rect);
 
 	HDC hdc = GetDC(hWnd);
-	mps->UpdateAndDraw(&rect, hdc);
+	mps->UpdateAndDraw(&rect, hdc, mouse);
 	ReleaseDC(hWnd, hdc);
 }
