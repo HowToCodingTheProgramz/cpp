@@ -1,6 +1,9 @@
 #pragma once
 
 #include "resource.h"
+#include "collisions.hpp"
+
+#define NUM_WALLS 4
 
 namespace game {
 	struct mouse {
@@ -45,11 +48,14 @@ namespace game {
 	};
 	struct Simulation {
 	private:
-		const int w = 320;
+		const int w = 320; // rookie numbers.
 		const int h = 240;
 
-		int paddle_x, paddle_y, paddle_w, paddle_h;
-		int ball_x, ball_y, ball_dx, ball_dy, ball_w, ball_h;
+		CollisionChecker collChecker;
+		Wall** walls;
+		Brick *bricks;
+		Player player;
+		Ball ball;
 
 		HDC dc;
 		HBITMAP bm;
@@ -57,6 +63,7 @@ namespace game {
 		AutoBrush redBrush;
 
 		void Update(mouse & m) {
+			/*
 			bool mouseclicked = m.getAndClearClicked();
 			if (m.sx < (paddle_x + (paddle_w >> 1))) {
 				if (paddle_x > 0) paddle_x -= 2;
@@ -132,18 +139,48 @@ namespace game {
 
 	public:
 
-		Simulation(HWND hWnd) : redBrush(RGB(255, 32, 32)) {
-			paddle_w = static_cast<int>(6.25f * (static_cast<float>(w) / 100.0f));
-			paddle_h = static_cast<int>(2.1f * (static_cast<float>(h) / 100.0f));
-			paddle_x = (w >> 1) - (paddle_w >> 1);
-			paddle_y = h - (paddle_h << 1);
+		Simulation(HWND hWnd) : redBrush(RGB(255, 32, 32)), player(&collChecker), ball(&collChecker) {
+			player.w = static_cast<int>(6.25f * (static_cast<float>(w) / 100.0f));
+			player.h = static_cast<int>(2.1f * (static_cast<float>(h) / 100.0f));
+			player.x = (w >> 1) - (player.w >> 1);
+			player.y = h - (player.h << 1);
 
-			ball_x = (w >> 1) - 2;
-			ball_y = (h >> 1) - 2;
-			ball_dx = 1;
-			ball_dy = 1;
-			ball_w = 4;
-			ball_h = 4;
+			ball.x = (w >> 1) - 2;
+			ball.y = (h >> 1) - 2;
+			ball.dx = 1;
+			ball.dy = 1;
+			ball.w = 4;
+			ball.h = 4;
+
+			walls = new Wall*[NUM_WALLS];
+
+			for (int w = 0; w < NUM_WALLS; w++) {
+				walls[w] = new Wall(&collChecker);
+			}
+
+			// left wall
+			walls[0]->x = 0;
+			walls[0]->y = 0;
+			walls[0]->w = 2;
+			walls[0]->h = h;
+
+			// top wall
+			walls[1]->x = 0;
+			walls[1]->y = 0;
+			walls[1]->w = w;
+			walls[1]->h = 2;
+
+			// right wall
+			walls[2]->x = w - 2;
+			walls[2]->y = 0;
+			walls[2]->w = 2;
+			walls[2]->h = h;
+
+			// bottom wall
+			walls[3]->x = 0;
+			walls[3]->y = h - 2;
+			walls[3]->w = w;
+			walls[3]->h = 2;
 
 			HDC hdc = GetDC(hWnd);
 			dc = CreateCompatibleDC(hdc);
@@ -170,10 +207,15 @@ namespace game {
 			RECT myRect = { 0, 0, w, h };
 			FillRect(dc, &myRect, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
-			RECT r = {paddle_x, paddle_y, paddle_x + paddle_w, paddle_y + paddle_h};
+			for (int i = 0; i < NUM_WALLS; i++) {
+				RECT w = { walls[i]->x, walls[i]->y, walls[i]->x + walls[i]->w, walls[i]->y + walls[i]->h };
+				FillRect(dc, &w, redBrush.get());
+			}
+
+			RECT r = { player.x, player.y, player.x + player.w, player.y + player.h };
 			FillRect(dc, &r, redBrush.get());
 
-			RECT q = { ball_x, ball_y, ball_x + ball_w, ball_y + ball_h };
+			RECT q = { ball.x, ball.y, ball.x + ball.w, ball.y + ball.h };
 			FillRect(dc, &q, redBrush.get());
 			// More drawing code here.
 			// ...
