@@ -32,8 +32,8 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
-	game::Simulation * mps = new game::Simulation(g_hWnd);
-	SetTimer(g_hWnd, (UINT_PTR)(mps), 16, (TIMERPROC)OnTimer); //aim for 60 FPS
+	game::Simulation * simulation = new game::Simulation(g_hWnd);
+	SetTimer(g_hWnd, (UINT_PTR)(simulation), 16, (TIMERPROC)OnTimer); //aim for 60 FPS
 
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CPPBLOCKS));
 	MSG msg;
@@ -45,8 +45,8 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance,
 		}
 	}
 
-	KillTimer(g_hWnd, (UINT_PTR)(mps));
-	delete mps;
+	KillTimer(g_hWnd, (UINT_PTR)(simulation));
+	delete simulation;
 
 	return (int) msg.wParam;
 }
@@ -149,11 +149,11 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 }
 
 void OnTimer(HWND hWnd, UINT uint, UINT_PTR ptr, DWORD word) {
-	game::Simulation * mps = reinterpret_cast<game::Simulation*>(ptr);
+	game::Simulation * simulation = reinterpret_cast<game::Simulation*>(ptr);
 	RECT rect;
 	GetClientRect(hWnd, &rect);
 
 	HDC hdc = GetDC(hWnd);
-	mps->UpdateAndDraw(&rect, hdc, mouse);
+	simulation->UpdateAndDraw(&rect, hdc, mouse);
 	ReleaseDC(hWnd, hdc);
 }

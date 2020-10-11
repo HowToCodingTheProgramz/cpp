@@ -155,13 +155,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="collisions.hpp" />
+    <ClInclude Include="collisions\CollisionChecker.h" />
+    <ClInclude Include="collisions\Collidable.h" />
     <ClInclude Include="CPPBlocks.h" />
+    <ClInclude Include="entities\Ball.hpp" />
+    <ClInclude Include="entities\Brick.hpp" />
+    <ClInclude Include="entities\Paddle.hpp" />
+    <ClInclude Include="entities\Wall.hpp" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="collisions\Collidable.cpp" />
+    <ClCompile Include="collisions\CollisionChecker.cpp" />
     <ClCompile Include="CPPBlocks.cpp" />
   </ItemGroup>
   <ItemGroup>

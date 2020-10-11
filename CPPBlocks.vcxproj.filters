@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Entities">
+      <UniqueIdentifier>{e8e5020d-e113-4cd7-8e5a-c36699877fca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Collisions">
+      <UniqueIdentifier>{65ea5c7c-c7e3-42bc-b6f7-1fa46cff8d92}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -27,13 +33,34 @@
     <ClInclude Include="CPPBlocks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="collisions.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="entities\Ball.hpp">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="entities\Brick.hpp">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="entities\Paddle.hpp">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="entities\Wall.hpp">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="collisions\CollisionChecker.h">
+      <Filter>Collisions</Filter>
+    </ClInclude>
+    <ClInclude Include="collisions\Collidable.h">
+      <Filter>Collisions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CPPBlocks.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="collisions\CollisionChecker.cpp">
+      <Filter>Collisions</Filter>
+    </ClCompile>
+    <ClCompile Include="collisions\Collidable.cpp">
+      <Filter>Collisions</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
