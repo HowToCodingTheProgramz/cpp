@@ -5,11 +5,14 @@
 namespace collisions {
 	class CollisionChecker {
 		std::vector<Collidable *> entities;
-	public:
 		CollisionChecker();
 		~CollisionChecker();
+	public:
 
 		void AddCollidable(Collidable * col);
+		void RemoveCollidable(Collidable * col);
 		void CheckCollisions();
+
+		static CollisionChecker* getCollisionChecker();
 	};
 }; // namespace collisions

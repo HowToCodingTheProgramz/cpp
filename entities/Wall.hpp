@@ -8,5 +8,5 @@ public:
 
 	~Wall() {}
 
-	virtual void CollisionResponse(collisions::CollisionType t) override {}
+	virtual void CollisionResponse(collisions::CollisionType t, collisions::CollisionEdges e) override {}
 };

@@ -5,6 +5,7 @@
 #include "entities/Brick.hpp"
 #include "entities/Wall.hpp"
 #include "entities/Paddle.hpp"
+#include "collisions/CollisionChecker.h"
 
 #define NUM_WALLS 4
 #define NUM_BRICKS 200
@@ -66,16 +67,18 @@ namespace game {
 		AutoBrush redBrush;
 
 		void Update(mouse & m) {
-			/*
 			bool mouseclicked = m.getAndClearClicked();
-			if (m.sx < (paddle_x + (paddle_w >> 1))) {
-				if (paddle_x > 0) paddle_x -= 2;
-			} else if (m.sx > (paddle_x + (paddle_w >> 1))) {
-				if ((paddle_x + paddle_w) < w) paddle_x += 2;
+			if (m.sx < (paddle.x + (paddle.w >> 1))) {
+				paddle.x -= 2;
+			} else if (m.sx > (paddle.x + (paddle.w >> 1))) {
+				paddle.x += 2;
 			}
-			ball_x += ball_dx;
-			ball_y += ball_dy;
 
+			ball.x += ball.dx;
+			ball.y += ball.dy;
+
+			collisions::CollisionChecker::getCollisionChecker()->CheckCollisions();
+			/*
 			if (((ball_y + ball_h) > paddle_y) && (ball_y < (paddle_y + paddle_h))) {
 				if ((ball_x >= paddle_x) && ((ball_x + ball_w) <= (paddle_x + paddle_w))) {
 					ball_dy = -1;
@@ -143,47 +146,16 @@ namespace game {
 	public:
 
 		Simulation(HWND hWnd) : redBrush(RGB(255, 32, 32)) {
-			paddle.w = static_cast<int>(6.25f * (static_cast<float>(w) / 100.0f));
-			paddle.h = static_cast<int>(2.1f * (static_cast<float>(h) / 100.0f));
-			paddle.x = (w >> 1) - (paddle.w >> 1);
-			paddle.y = h - (paddle.h << 1);
+			int paddle_w = static_cast<int>(6.25f * (static_cast<float>(w) / 100.0f));
+			int paddle_h = static_cast<int>(2.1f * (static_cast<float>(h) / 100.0f));
 
-			ball.x = (w >> 1) - 2;
-			ball.y = (h >> 1) - 2;
-			ball.dx = 1;
-			ball.dy = 1;
-			ball.w = 4;
-			ball.h = 4;
+			paddle.SetValues((w >> 1) - (paddle_w >> 1), h - (paddle_h << 1), paddle_w, paddle_h, 0, 0);
+			ball.SetValues((w >> 1) - 2, (h >> 1) - 2, 4, 4, 1, 1);
 
-			//walls = new Wall*[NUM_WALLS];
-
-			//for (int w = 0; w < NUM_WALLS; w++) {
-			//	walls[w] = new Wall(&collChecker);
-			//}
-
-			// left wall
-			walls[0].x = 0;
-			walls[0].y = 0;
-			walls[0].w = 2;
-			walls[0].h = h;
-
-			// top wall
-			walls[1].x = 0;
-			walls[1].y = 0;
-			walls[1].w = w;
-			walls[1].h = 2;
-
-			// right wall
-			walls[2].x = w - 2;
-			walls[2].y = 0;
-			walls[2].w = 2;
-			walls[2].h = h;
-
-			// bottom wall
-			walls[3].x = 0;
-			walls[3].y = h - 2;
-			walls[3].w = w;
-			walls[3].h = 2;
+			walls[0].SetValues(0, 0, 2, h, 0, 0); // left wall
+			walls[1].SetValues(0, 0, w, 2, 0, 0); // top wall
+			walls[2].SetValues(w - 2, 0, 2, h, 0, 0); // right wall
+			walls[3].SetValues(0, h - 2, w, 2, 0, 0); // bottom wall
 
 			HDC hdc = GetDC(hWnd);
 			dc = CreateCompatibleDC(hdc);
