@@ -3,7 +3,7 @@
 #include "Collidable.h"
 #include "CollisionChecker.h"
 
-collisions::Collidable::Collidable(CollisionType type) : x(0), y(0), w(0), h(0), dx(0), dy(0), type(type) {
+collisions::Collidable::Collidable(CollisionType type) : x(0), y(0), w(0), h(0), dx(0), dy(0), type(type), interactive(true) {
 	collisions::CollisionChecker::getCollisionChecker()->AddCollidable(this);
 }
 

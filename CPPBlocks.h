@@ -7,8 +7,16 @@
 #include "entities/Paddle.hpp"
 #include "collisions/CollisionChecker.h"
 
+#include <string>
+#include <sstream>
+
+#define SIMULATION_W 320
+#define SIMULATION_H 240
 #define NUM_WALLS 4
-#define NUM_BRICKS 200
+#define NUM_BRICKS 105
+#define NUM_BRICK_ROWS 5
+#define WALL_W 2
+#define WALL_H 2
 
 namespace game {
 	struct mouse {
@@ -51,15 +59,18 @@ namespace game {
 			return brush;
 		}
 	};
-	struct Simulation {
+	struct Simulation : public BrickBrokenListener {
 	private:
-		const int w = 320; // rookie numbers.
-		const int h = 240;
-
 		Wall walls[NUM_WALLS];
-		Brick bricks[NUM_BRICKS];
+		Brick* bricks[NUM_BRICKS];
+		AutoBrush brickBrushes[4] = {
+			RGB(32, 255, 32), RGB(32, 32, 255),
+			RGB(255, 255, 32), RGB(32, 32, 255)
+		};
 		Paddle paddle;
 		Ball ball;
+		int score;
+		std::string scoreStr;
 
 		HDC dc;
 		HBITMAP bm;
@@ -78,91 +89,55 @@ namespace game {
 			ball.y += ball.dy;
 
 			collisions::CollisionChecker::getCollisionChecker()->CheckCollisions();
-			/*
-			if (((ball_y + ball_h) > paddle_y) && (ball_y < (paddle_y + paddle_h))) {
-				if ((ball_x >= paddle_x) && ((ball_x + ball_w) <= (paddle_x + paddle_w))) {
-					ball_dy = -1;
-					ball_y += ball_dy;
-					//score += 10;
-					return;
-				}
-			}
-			if ((ball_x + ball_w) > w) {
-				ball_dx = -1;
-				ball_x += ball_dx;
-				return;
-			}
-			if ((ball_y + ball_h) > h) {
-				ball_dy = -1;
-				ball_y += ball_dy;
-				// you missed the ball . . . do something.
-				// end screen or something?
-				//--lives;
-				//resetBall();
-				//if (lives < 0) {
-				//	currentState = states.DIED;
-				//}
-				return;
-			}
-			if ((ball_x) < 0) {
-				ball_dx = 1;
-				ball_x += ball_dx;
-				return;
-			}
-			if ((ball_y) < 0) {
-				ball_dy = 1;
-				ball_y += ball_dy;
-				return;
-			}
-			/*
-			var intersectingEdge = playingField.findIntersectingEdgeOf(ball);
-			if (intersectingEdge > -1) {
-				// change direction based on the intersection
-				score += 100;
-				switch (intersectingEdge) {
-				case 0:
-					ball_dy = 1;
-					ball_y += ball_dy;
-					break;
-				case 1:
-					ball_dx = -1;
-					ball_x += ball_dx;
-					break;
-				case 2:
-					ball_dy = -1;
-					ball_y += ball_dy;
-					break;
-				case 3:
-					ball_dx = 1;
-					ball_x += ball_dx;
-					break;
-				default:
-					break;
-				}
-			}
-			*/
 		}
 
 	public:
 
 		Simulation(HWND hWnd) : redBrush(RGB(255, 32, 32)) {
-			int paddle_w = static_cast<int>(6.25f * (static_cast<float>(w) / 100.0f));
-			int paddle_h = static_cast<int>(2.1f * (static_cast<float>(h) / 100.0f));
+			int paddle_w = static_cast<int>(6.25f * (static_cast<float>(SIMULATION_W) / 100.0f));
+			int paddle_h = static_cast<int>(2.1f * (static_cast<float>(SIMULATION_H) / 100.0f));
 
-			paddle.SetValues((w >> 1) - (paddle_w >> 1), h - (paddle_h << 1), paddle_w, paddle_h, 0, 0);
-			ball.SetValues((w >> 1) - 2, (h >> 1) - 2, 4, 4, 1, 1);
+			paddle.SetValues((SIMULATION_W >> 1) - (paddle_w >> 1), SIMULATION_H - (paddle_h << 1), paddle_w, paddle_h, 0, 0);
+			ball.SetValues((SIMULATION_W >> 1) - 2, (SIMULATION_H >> 1) - 2, 4, 4, 1, 1);
 
-			walls[0].SetValues(0, 0, 2, h, 0, 0); // left wall
-			walls[1].SetValues(0, 0, w, 2, 0, 0); // top wall
-			walls[2].SetValues(w - 2, 0, 2, h, 0, 0); // right wall
-			walls[3].SetValues(0, h - 2, w, 2, 0, 0); // bottom wall
+			walls[0].SetValues(0, 0, WALL_W, SIMULATION_H, 0, 0); // left wall
+			walls[1].SetValues(0, 0, SIMULATION_W, WALL_H, 0, 0); // top wall
+			walls[2].SetValues(SIMULATION_W - WALL_W, 0, WALL_W, SIMULATION_H, 0, 0); // right wall
+			walls[3].SetValues(0, SIMULATION_H - WALL_H, SIMULATION_W, WALL_W, 0, 0); // bottom wall
+
+			// Build a wall.
+			int num_bricks_per_row = NUM_BRICKS / NUM_BRICK_ROWS;
+			int brick_w = ((SIMULATION_W - (WALL_W << 1)) / num_bricks_per_row);
+			float bw = (static_cast<float>(brick_w) * 3.0f) / 4.0f;
+			int brick_h = static_cast<int>(bw);
+
+			int current_brick = 0;
+			int x = WALL_W + 1;
+			int y = WALL_H;
+			for (int i = 0; i < NUM_BRICKS; i++) {
+				bricks[i] = new Brick(this, true);
+				bricks[i]->SetValues(x, y, brick_w, brick_h, 0, 0);
+
+				current_brick++;
+				x += brick_w;
+				if (current_brick >= num_bricks_per_row) {
+					current_brick = 0;
+					x = WALL_W + 1;
+					y += brick_h;
+				}
+			}
 
 			HDC hdc = GetDC(hWnd);
 			dc = CreateCompatibleDC(hdc);
-			bm = CreateCompatibleBitmap(hdc, w, h); // This is literal magic in here.
+			bm = CreateCompatibleBitmap(hdc, SIMULATION_W, SIMULATION_H); // This is literal magic in here.
 			ReleaseDC(hWnd, hdc);
+			SetTextColor(dc, RGB(192, 64, 92));
+			SetBkMode(dc, TRANSPARENT);
 
 			oldBmp = SelectObject(dc, bm);
+
+			score = 0;
+			UpdateScore();
 		}
 
 		~Simulation() {
@@ -173,18 +148,24 @@ namespace game {
 
 		void UpdateAndDraw(LPRECT rect, HDC hdc, mouse & m) {
 			RECT rc = *rect;
-			rc.right = rc.left + max(w, rc.right);
-			rc.bottom = rc.top + max(h, rc.bottom);
-			m.scaleCoords(w, h, max(w, rc.right), max(h, rc.bottom));
+			rc.right = rc.left + max(SIMULATION_W, rc.right);
+			rc.bottom = rc.top + max(SIMULATION_H, rc.bottom);
+			m.scaleCoords(SIMULATION_W, SIMULATION_H, max(SIMULATION_W, rc.right), max(SIMULATION_H, rc.bottom));
 
 			Update(m);
 
-			RECT myRect = { 0, 0, w, h };
+			RECT myRect = { 0, 0, SIMULATION_W, SIMULATION_H };
 			FillRect(dc, &myRect, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
 			for (int i = 0; i < NUM_WALLS; i++) {
 				RECT w = { walls[i].x, walls[i].y, walls[i].x + walls[i].w, walls[i].y + walls[i].h };
 				FillRect(dc, &w, redBrush.get());
+			}
+
+			for (int i = 0; i < NUM_BRICKS; i++) {
+				if (!bricks[i]->IsVisible()) continue;
+				RECT b = { bricks[i]->x, bricks[i]->y, bricks[i]->x + bricks[i]->w, bricks[i]->y + bricks[i]->h };
+				FillRect(dc, &b, brickBrushes[i % 4].get());
 			}
 
 			RECT r = { paddle.x, paddle.y, paddle.x + paddle.w, paddle.y + paddle.h };
@@ -194,8 +175,22 @@ namespace game {
 			FillRect(dc, &q, redBrush.get());
 			// More drawing code here.
 			// ...
+			RECT scoreRect = { WALL_W << 1, SIMULATION_H - 20, 200, SIMULATION_H };
+			DrawText(dc, scoreStr.c_str(), scoreStr.size(), &scoreRect, DT_LEFT);
+			StretchBlt(hdc, 0, 0, rect->right - rect->left, rect->bottom - rect->top, dc, 0, 0, SIMULATION_W, SIMULATION_H, SRCCOPY);
+		}
+		void UpdateScore() {
+			std::stringstream ss;
+			ss << "SCORE: " << score;
+			scoreStr = ss.str();
+		}
+		void OnBrickBroken(Brick* b, collisions::CollisionType t, collisions::CollisionEdges e) override {
+			b->SetVisible(false);
+			b->interactive = false;
+			score += 10;
+			UpdateScore();
 
-			StretchBlt(hdc, 0, 0, rect->right - rect->left, rect->bottom - rect->top, dc, 0, 0, w, h, SRCCOPY);
+			// Check - are all the bricks broken? Yes? New Stage!
 		}
 	};
 }; // namespace game

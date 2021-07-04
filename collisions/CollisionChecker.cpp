@@ -27,6 +27,8 @@ void collisions::CollisionChecker::CheckCollisions() {
 	do {
 		for (int i = 0; i < entities.size(); i++) {
 			if (currentEntityIdx == i) continue; // don't check an entity against itself.
+			if (!entities[i]->interactive) continue;
+			if (!entities[currentEntityIdx]->interactive) continue;
 
 			collisions::CollisionEdges e = entities[i]->Collided(entities[currentEntityIdx]);
 			if (e.TOP || e.RIGHT || e.BOTTOM || e.LEFT) {

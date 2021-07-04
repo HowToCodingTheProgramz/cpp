@@ -27,6 +27,7 @@ namespace collisions {
 		bool leftWithinRange(Collidable* other);
 	public:
 		int x, y, w, h, dx, dy;
+		bool interactive;
 
 		Collidable(CollisionType type);
 		virtual ~Collidable();
