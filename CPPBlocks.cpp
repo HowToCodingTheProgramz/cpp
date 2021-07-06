@@ -1,5 +1,6 @@
 #include "framework.h"
-#include "CPPBlocks.h"
+#include "resource.h"
+#include "Simulation.h"
 
 #define MAX_LOADSTRING 100
 
@@ -62,7 +63,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
 	wcex.cbWndExtra     = 0;
 	wcex.hInstance      = hInstance;
 	wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_CPPBLOCKS));
-	wcex.hCursor        = LoadCursor(nullptr, IDC_HAND);
+	wcex.hCursor        = NULL;//LoadCursor(nullptr, IDC_ARROW);
 	wcex.hbrBackground  = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	wcex.lpszMenuName   = MAKEINTRESOURCE(IDC_CPPBLOCKS);
 	wcex.lpszClassName  = szWindowClass;
@@ -104,6 +105,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			}
 		}
 		break;
+		case WM_SETCURSOR: {
+			if (LOWORD(lParam) == HTCLIENT) {
+				SetCursor(NULL);
+				return TRUE;
+			}
+		} break;
 		case WM_LBUTTONUP:
 			mouse.clicked = true;
 			break;

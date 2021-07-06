@@ -30,9 +30,6 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CPPBlocks.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="entities\Ball.hpp">
       <Filter>Entities</Filter>
     </ClInclude>
@@ -51,6 +48,9 @@
     <ClInclude Include="collisions\Collidable.h">
       <Filter>Collisions</Filter>
     </ClInclude>
+    <ClInclude Include="Simulation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CPPBlocks.cpp">
@@ -61,6 +61,9 @@
     </ClCompile>
     <ClCompile Include="collisions\Collidable.cpp">
       <Filter>Collisions</Filter>
+    </ClCompile>
+    <ClCompile Include="Simulation.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
