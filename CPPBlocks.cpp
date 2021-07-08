@@ -5,6 +5,8 @@
 #define MAX_LOADSTRING 100
 
 HWND g_hWnd = (HWND)(INVALID_HANDLE_VALUE);
+HDC g_hDC = (HDC)(INVALID_HANDLE_VALUE);
+RECT g_rect = { 0, 0, 0, 0 };
 HINSTANCE hInst;                                // current instance
 CHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 CHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
@@ -63,9 +65,9 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
 	wcex.cbWndExtra     = 0;
 	wcex.hInstance      = hInstance;
 	wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_CPPBLOCKS));
-	wcex.hCursor        = NULL;//LoadCursor(nullptr, IDC_ARROW);
+	wcex.hCursor        = NULL;
 	wcex.hbrBackground  = (HBRUSH)GetStockObject(BLACK_BRUSH);
-	wcex.lpszMenuName   = MAKEINTRESOURCE(IDC_CPPBLOCKS);
+	wcex.lpszMenuName   = NULL;
 	wcex.lpszClassName  = szWindowClass;
 	wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -74,15 +76,23 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
 
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	hInst = hInstance; // Store instance handle in our global variable
-	g_hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, 100, 100, 640, 480, nullptr, nullptr, hInstance, nullptr);
 
-	if (!g_hWnd) {
+	const POINT ptZero = { 0, 0 };
+	HMONITOR primryMonitor = MonitorFromPoint(ptZero, MONITOR_DEFAULTTOPRIMARY);
+	MONITORINFO primaryMonitorInfo = { sizeof(primaryMonitorInfo) };
+	if (GetMonitorInfo(primryMonitor, &primaryMonitorInfo)) {
+		g_hWnd = CreateWindow(szWindowClass, szTitle, WS_POPUP, 0, 0, 640, 480, nullptr, nullptr, hInstance, nullptr);
+
+		if (!g_hWnd) {
+			return FALSE;
+		}
+
+		ShowWindow(g_hWnd, nCmdShow);
+		UpdateWindow(g_hWnd);
+		::SendMessage(g_hWnd, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+	} else {
 		return FALSE;
 	}
-
-	ShowWindow(g_hWnd, nCmdShow);
-	UpdateWindow(g_hWnd);
-
 	return TRUE;
 }
 
@@ -118,6 +128,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			mouse.x = LOWORD(lParam);
 			mouse.y = HIWORD(lParam);
 			break;
+		case WM_KEYUP:
+			if (wParam == VK_ESCAPE) {
+				PostQuitMessage(0);
+			}
+		break;
 		case WM_GETMINMAXINFO: {
 			LPMINMAXINFO lpmmi = reinterpret_cast<LPMINMAXINFO>(lParam);
 			lpmmi->ptMinTrackSize.x = 320;
@@ -157,10 +172,11 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
 
 void OnTimer(HWND hWnd, UINT uint, UINT_PTR ptr, DWORD word) {
 	game::Simulation * simulation = reinterpret_cast<game::Simulation*>(ptr);
-	RECT rect;
-	GetClientRect(hWnd, &rect);
-
-	HDC hdc = GetDC(hWnd);
-	simulation->UpdateAndDraw(&rect, hdc, mouse);
-	ReleaseDC(hWnd, hdc);
+	if (g_rect.right == 0) {
+		GetClientRect(hWnd, &g_rect);
+	}
+	if (g_hDC == INVALID_HANDLE_VALUE) {
+		g_hDC = GetDC(hWnd);
+	}
+	simulation->UpdateAndDraw(&g_rect, g_hDC, mouse);
 }

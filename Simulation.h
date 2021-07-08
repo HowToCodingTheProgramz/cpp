@@ -18,6 +18,7 @@
 #define WALL_W 2
 #define WALL_H 2
 #define COUNTDOWN_PERIOD 3000
+#define NUM_DEFAULT_LIVES 5
 
 namespace game {
 	enum GameStates {
@@ -25,8 +26,9 @@ namespace game {
 		STATE_COUNTDOWN,
 		STATE_GAMEPLAY,
 		STATE_PAUSED,
+		STATE_LIFE_LOST,
 		STATE_WIN,
-		STATE_LOSE
+		STATE_LOSE,
 	};
 	struct mouse {
 		bool clicked;
@@ -57,13 +59,15 @@ namespace game {
 		Wall walls[NUM_WALLS];
 		Brick* bricks[NUM_BRICKS];
 		AutoBrush brickBrushes[4] = {
-			RGB(32, 255, 32), RGB(32, 32, 255),
-			RGB(255, 255, 32), RGB(32, 32, 255)
+			RGB(32, 192, 32), RGB(32, 32, 192),
+			RGB(192, 192, 32), RGB(32, 32, 192)
 		};
 		Paddle paddle;
 		Ball ball;
 		int score;
+		int lives;
 		std::string scoreStr;
+		std::string livesStr;
 		GameStates currentState;
 		DWORD startTime;
 
@@ -75,7 +79,11 @@ namespace game {
 		void Update(mouse & m);
 		void DrawStateText();
 		void UpdateScore();
+		void UpdateLives();
 		void BeginCountdown();
+
+		void ResetBallPosition();
+		void ResetBricksVisibility();
 
 	public:
 

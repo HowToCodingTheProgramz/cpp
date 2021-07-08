@@ -26,12 +26,12 @@ HBRUSH game::AutoBrush::get() const {
 	return brush;
 }
 
-game::Simulation::Simulation(HWND hWnd) : redBrush(RGB(255, 32, 32)) {
+game::Simulation::Simulation(HWND hWnd) : redBrush(RGB(192, 32, 32)) {
 	int paddle_w = static_cast<int>(10.25f * (static_cast<float>(SIMULATION_W) / 100.0f));
 	int paddle_h = static_cast<int>(3.1f * (static_cast<float>(SIMULATION_H) / 100.0f));
 
 	paddle.SetValues((SIMULATION_W >> 1) - (paddle_w >> 1), SIMULATION_H - (paddle_h << 1), paddle_w, paddle_h, 0, 0);
-	ball.SetValues((SIMULATION_W >> 1) - 2, (SIMULATION_H >> 1) - 2, 4, 4, 1, 1);
+	ResetBallPosition();
 
 	walls[0].SetValues(0, 0, WALL_W, SIMULATION_H, 0, 0); // left wall
 	walls[1].SetValues(0, 0, SIMULATION_W, WALL_H, 0, 0); // top wall
@@ -70,7 +70,10 @@ game::Simulation::Simulation(HWND hWnd) : redBrush(RGB(255, 32, 32)) {
 	oldBmp = SelectObject(dc, bm);
 
 	score = 0;
+	lives = NUM_DEFAULT_LIVES;
+
 	UpdateScore();
+	UpdateLives();
 
 	currentState = STATE_INITIAL;
 }
@@ -112,6 +115,9 @@ void game::Simulation::UpdateAndDraw(LPRECT rect, HDC hdc, game::mouse & m) {
 	RECT scoreRect = { WALL_W << 1, SIMULATION_H - 40, 200, SIMULATION_H };
 	DrawText(dc, scoreStr.c_str(), scoreStr.size(), &scoreRect, DT_LEFT);
 
+	RECT livesRect = { SIMULATION_W - 60, SIMULATION_H - 40, SIMULATION_W, SIMULATION_H };
+	DrawText(dc, livesStr.c_str(), livesStr.size(), &livesRect, DT_LEFT);
+
 	DrawStateText();
 
 	StretchBlt(hdc, 0, 0, rect->right - rect->left, rect->bottom - rect->top, dc, 0, 0, SIMULATION_W, SIMULATION_H, SRCCOPY);
@@ -121,6 +127,11 @@ void game::Simulation::UpdateScore() {
 	ss << "SCORE: " << score;
 	scoreStr = ss.str();
 }
+void game::Simulation::UpdateLives() {
+	std::stringstream ss;
+	ss << "LIVES: " << lives;
+	livesStr = ss.str();
+}
 void game::Simulation::Update(game::mouse & m) {
 	bool mouseclicked = m.getAndClearClicked();
 
@@ -128,7 +139,7 @@ void game::Simulation::Update(game::mouse & m) {
 	case STATE_INITIAL:
 		if (mouseclicked)
 			BeginCountdown();
-		return;
+	return;
 	case STATE_COUNTDOWN: {
 		if (GetTickCount() - startTime > COUNTDOWN_PERIOD)
 			currentState = STATE_GAMEPLAY;
@@ -141,27 +152,41 @@ void game::Simulation::Update(game::mouse & m) {
 		if (mouseclicked)
 			currentState = STATE_PAUSED;
 
-		if (ball.y > SIMULATION_H)
-			currentState = STATE_LOSE;
+		if (ball.y > SIMULATION_H) {
+			lives--;
+			UpdateLives();
+			if (lives >= 0) {
+				currentState = STATE_LIFE_LOST;
+			} else {
+				currentState = STATE_LOSE;
+			}
+		}
 	} break;
+	case STATE_LIFE_LOST:
+		if (mouseclicked) {
+			ResetBallPosition();
+			ResetBricksVisibility();
+			BeginCountdown();
+		}
+	break;
 	case STATE_PAUSED:
 		if (mouseclicked)
 			BeginCountdown();
-		break;
+	break;
 	case STATE_WIN:
 	case STATE_LOSE:
-		ball.SetValues((SIMULATION_W >> 1) - 2, (SIMULATION_H >> 1) - 2, 4, 4, 1, 1);
+		ResetBallPosition();
 		if (mouseclicked) {
 			score = 0;
+			lives = NUM_DEFAULT_LIVES;
 			UpdateScore();
-			for (int i = 0; i < NUM_BRICKS; i++) {
-				bricks[i]->SetVisible(true);
-			}
+			UpdateLives();
+			ResetBricksVisibility();
 			currentState = STATE_INITIAL;
 		}
-		break;
+	break;
 	default:
-		break;
+	break;
 	}
 
 	paddle.x = m.sx - (paddle.w >> 1);
@@ -178,11 +203,14 @@ void game::Simulation::DrawStateText() {
 		std::string l1 = "Move the mouse to control the paddle.";
 		std::string l2 = "Click the mouse to toggle pause.";
 		std::string l3 = "Click the mouse to start.";
+		std::string l4 = "Press ESCAPE to exit game.";
 		DrawText(dc, l1.c_str(), l1.size(), &textRect, DT_LEFT);
 		textRect.top += lineHeight;
 		DrawText(dc, l2.c_str(), l2.size(), &textRect, DT_LEFT);
 		textRect.top += lineHeight;
 		DrawText(dc, l3.c_str(), l3.size(), &textRect, DT_LEFT);
+		textRect.top += lineHeight;
+		DrawText(dc, l4.c_str(), l4.size(), &textRect, DT_LEFT);
 	} break;
 	case STATE_COUNTDOWN: {
 		std::string l1 = "Game Starts in:";
@@ -205,6 +233,14 @@ void game::Simulation::DrawStateText() {
 		textRect.top += lineHeight;
 		DrawText(dc, l2.c_str(), l2.size(), &textRect, DT_LEFT);
 	} break;
+	case STATE_LIFE_LOST: {
+		std::string l1 = "You've lost 1 life.";
+		std::stringstream ss;
+		ss << lives << " lives left - click to continue playing.";
+		DrawText(dc, ss.str().c_str(), ss.str().size(), &textRect, DT_LEFT);
+		textRect.top += lineHeight;
+		DrawText(dc, l1.c_str(), l1.size(), &textRect, DT_LEFT);
+	} break;
 	case STATE_LOSE: {
 		std::string l1 = "Sorry, you've lost - game over!";
 		std::string l2 = "Click mouse to start over.";
@@ -213,7 +249,7 @@ void game::Simulation::DrawStateText() {
 		DrawText(dc, l2.c_str(), l2.size(), &textRect, DT_LEFT);
 	} break;
 	default:
-		break;
+	break;
 	}
 }
 void game::Simulation::OnBrickBroken(Brick* b, collisions::CollisionType t, collisions::CollisionEdges e) {
@@ -227,4 +263,13 @@ void game::Simulation::OnBrickBroken(Brick* b, collisions::CollisionType t, coll
 		if (bricks[i]->IsVisible()) return;
 	}
 	currentState = STATE_WIN;
+}
+
+void game::Simulation::ResetBallPosition() {
+	ball.SetValues((SIMULATION_W >> 1) - 2, (SIMULATION_H >> 1) - 2, 4, 4, 1, 1);
+}
+void game::Simulation::ResetBricksVisibility() {
+	for (int i = 0; i < NUM_BRICKS; i++) {
+		bricks[i]->SetVisible(true);
+	}
 }
